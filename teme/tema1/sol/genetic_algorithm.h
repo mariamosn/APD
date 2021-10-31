@@ -5,7 +5,7 @@
 #include "individual.h"
 
 // reads input from a given file
-int read_input(sack_object **objects, int *object_count, int *sack_capacity, int *generations_count, int argc, char *argv[]);
+int read_input(sack_object **objects, int *object_count, int *sack_capacity, int *generations_count, int *P, int argc, char *argv[]);
 
 // displays all the objects that can be placed in the sack
 void print_objects(const sack_object *objects, int object_count);

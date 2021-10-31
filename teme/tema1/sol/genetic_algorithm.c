@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include "genetic_algorithm.h"
 
-int read_input(sack_object **objects, int *object_count, int *sack_capacity, int *generations_count, int argc, char *argv[])
+int read_input(sack_object **objects, int *object_count, int *sack_capacity, int *generations_count, int *P, int argc, char *argv[])
 {
 	FILE *fp;
 
-	if (argc < 3) {
-		fprintf(stderr, "Usage:\n\t./tema1 in_file generations_count\n");
+	if (argc < 4) {
+		fprintf(stderr, "Usage:\n\t./tema1_par in_file generations_count P\n");
 		return 0;
 	}
 
@@ -40,6 +40,7 @@ int read_input(sack_object **objects, int *object_count, int *sack_capacity, int
 	fclose(fp);
 
 	*generations_count = (int) strtol(argv[2], NULL, 10);
+	*P = (int) strtol(argv[3], NULL, 10);
 	
 	if (*generations_count == 0) {
 		free(tmp_objects);
