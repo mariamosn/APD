@@ -14,7 +14,67 @@ struct my_arg {
 	individual *current_generation;
 	individual *next_generation;
 	pthread_barrier_t *barrier;
+	int *sorted;
 };
+
+void oets(individual *current_generation, int object_count, int id, int P, pthread_barrier_t *barrier, int *sorted) {
+	int start_odd, start_even, end, sorted_aux;
+	individual aux;
+
+	// printf("HELLO! %d\n", id);
+
+	start_odd = id * (double)object_count / P;
+	end = (id + 1) * (double)object_count / P;
+	if (end > object_count - 1) {
+		end = object_count - 1;
+	}
+
+	if (start_odd % 2 == 0) {
+		start_even = start_odd;
+		start_odd++;
+	} else {
+		start_even = start_odd + 1;
+	}
+	// printf("id: %d, oc: %d, start odd: %d, start_even: %d, end: %d\n", id, object_count, start_odd, start_even, end);
+
+	if (id == 0) {
+		*sorted = 0;
+	}
+	pthread_barrier_wait(barrier);
+	// implementati aici OETS paralel
+	for (int k = 0; k < object_count && *sorted == 0; k++) {
+		sorted_aux = 1;
+		for (int i = start_even; i < end; i += 2) {
+			if (cmpfunc(&current_generation[i], &current_generation[i + 1]) > 0) {
+				aux = current_generation[i];
+				current_generation[i] = current_generation[i + 1];
+				current_generation[i + 1] = aux;
+				sorted_aux = 0;
+			}
+		}
+		
+		pthread_barrier_wait(barrier);
+		if (id == 0) {
+			*sorted = 1;
+		}
+
+		for (int i = start_odd; i < end; i += 2) {
+			if (cmpfunc(&current_generation[i], &current_generation[i + 1]) > 0) {
+				aux = current_generation[i];
+				current_generation[i] = current_generation[i + 1];
+				current_generation[i + 1] = aux;
+				sorted_aux = 0;
+			}
+		}
+
+		if (sorted_aux == 0) {
+			*sorted = 0;
+		}
+		
+		pthread_barrier_wait(barrier);
+	}
+	// printf("%d DONE!!!\n", id);
+}
 
 void *thread_function(void *arg) {
 	struct my_arg* data = (struct my_arg*) arg;
@@ -27,6 +87,7 @@ void *thread_function(void *arg) {
 	individual *current_generation = data -> current_generation;
 	individual *next_generation = data -> next_generation;
 	pthread_barrier_t *barrier = data -> barrier;
+	// int *sorted = data -> sorted;
 
 	int cursor, count;
 	individual *tmp = NULL;
@@ -81,8 +142,9 @@ void *thread_function(void *arg) {
 		/////////////////////////////////////////////////////////////
 
 		// TODO: DE PARALELIZAT SORTAREA!!!!!
-		if (id ==0) qsort(current_generation, object_count, sizeof(individual), cmpfunc);
+		if (id == 0) qsort(current_generation, object_count, sizeof(individual), cmpfunc);
 		pthread_barrier_wait(barrier);
+		// oets(current_generation, object_count, id, P, barrier, sorted);
 
 		/////////////////////////////////////////////////////////////
 
@@ -107,7 +169,7 @@ void *thread_function(void *arg) {
 		}
 		for (int i = start_local; i < end_local; ++i) {
 			copy_individual(current_generation + i, next_generation + cursor + i);
-			// TODO: DE PARALELIZAT MUTATIA
+			// TODO: DE PARALELIZAT MUTATIA => nu cred ca e necesar
 			mutate_bit_string_1(next_generation + cursor + i, k);
 		}
 		cursor += count;
@@ -121,7 +183,7 @@ void *thread_function(void *arg) {
 		}
 		for (int i = start_local; i < end_local; ++i) {
 			copy_individual(current_generation + i + count, next_generation + cursor + i);
-			// TODO: DE PARALELIZAT MUTATIA
+			// TODO: DE PARALELIZAT MUTATIA => nu cred ca e necesar
 			mutate_bit_string_2(next_generation + cursor + i, k);
 		}
 		cursor += count;
@@ -186,9 +248,27 @@ void *thread_function(void *arg) {
 
 	// TODO: DE PARALELIZAT SORTAREA!!!!!
 	if (id == 0) qsort(current_generation, object_count, sizeof(individual), cmpfunc);
+	// oets(current_generation, object_count, id, P, barrier, sorted);
 
 	if (id == 0) {
 		print_best_fitness(current_generation);
+	}
+
+	pthread_barrier_wait(barrier);
+
+	start = id * (double)current_generation->chromosome_length / P;
+	end = (id + 1) * (double)current_generation->chromosome_length / P;
+	if (end > current_generation->chromosome_length) {
+		end = current_generation->chromosome_length;
+	}
+	for (int i = start; i < end; ++i) {
+		free(current_generation[i].chromosomes);
+		current_generation[i].chromosomes = NULL;
+		current_generation[i].fitness = 0;
+
+		free(next_generation[i].chromosomes);
+		next_generation[i].chromosomes = NULL;
+		next_generation[i].fitness = 0;
 	}
 
 	pthread_exit(NULL);
@@ -198,7 +278,7 @@ void do_magic(sack_object *objects, int object_count, int generations_count, int
 	individual *current_generation = (individual*) calloc(object_count, sizeof(individual));
 	individual *next_generation = (individual*) calloc(object_count, sizeof(individual));
 
-	int r;
+	int r, sorted = 0;
 	pthread_t *threads;
 	struct my_arg *arguments;
 	void *status;
@@ -219,6 +299,7 @@ void do_magic(sack_object *objects, int object_count, int generations_count, int
 		arguments[i].current_generation = current_generation;
 		arguments[i].next_generation = next_generation;
 		arguments[i].barrier = &barrier;
+		arguments[i].sorted = &sorted;
 
 		r = pthread_create(&threads[i], NULL, thread_function, &arguments[i]);
 
@@ -243,8 +324,8 @@ void do_magic(sack_object *objects, int object_count, int generations_count, int
 
 	// free resources for old generation
 	// TODO: DE PARALELIZAT, DACA E CAZUL
-	free_generation(current_generation);
-	free_generation(next_generation);
+	// free_generation(current_generation);
+	// free_generation(next_generation);
 
 	// free resources
 	free(current_generation);
