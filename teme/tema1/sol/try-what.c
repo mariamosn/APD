@@ -17,93 +17,6 @@ struct my_arg {
 	int *sorted;
 };
 
-//*******************************************************************
-
-// merge function for merging two parts
-void merge(int low, int mid, int high, individual *a)
-{
-    // individual* left = malloc((mid - low + 1) * sizeof(int));
-    // individual* right = malloc((high - mid) * sizeof(int));
-	individual left[mid - low + 1];
-	individual right[high - mid];
- 
-    // n1 is size of left part and n2 is size
-    // of right part
-    int n1 = mid - low + 1, n2 = high - mid, i, j;
- 
-    // storing values in left part
-    for (i = 0; i < n1; i++)
-        left[i] = a[i + low];
- 
-    // storing values in right part
-    for (i = 0; i < n2; i++)
-        right[i] = a[i + mid + 1];
- 
-    int k = low;
-    i = j = 0;
- 
-    // merge left and right in ascending order
-    while (i < n1 && j < n2) {
-		if (cmpfunc(&left[i], &right[j]) <= 0)
-        	// if (left[i] <= right[j])
-            a[k++] = left[i++];
-        else
-            a[k++] = right[j++];
-    }
- 
-    // insert remaining values from left
-    while (i < n1) {
-        a[k++] = left[i++];
-    }
- 
-    // insert remaining values from right
-    while (j < n2) {
-        a[k++] = right[j++];
-    }
-
-	// free(left);
-	// free(right);
-}
- 
-// merge sort function
-void merge_sort_h(int low, int high, individual *v)
-{
-    // calculating mid point of array
-    int mid = low + (high - low) / 2;
-    if (low < high) {
- 
-        // calling first half
-        merge_sort_h(low, mid, v);
- 
-        // calling second half
-        merge_sort_h(mid + 1, high, v);
- 
-        // merging the two halves
-        merge(low, mid, high, v);
-    }
-}
- 
-// thread function for multi-threading
-void merge_sort(int id, int N, int P, individual *v)
-{ 
-    // calculating low and high
-    int low = id * ((double)N / P);
-    int high = (id + 1) * ((double)N / P) - 1;
-	if (id == P - 1) {
-		high = N - 1;
-	}
- 
-    // evaluating mid point
-    int mid = low + (high - low) / 2;
-    if (low < high) {
-        merge_sort_h(low, mid, v);
-        merge_sort_h(mid + 1, high, v);
-        merge(low, mid, high, v);
-    }
-}
-
-//**********************************************************************
-
 void oets(individual *current_generation, int object_count, int id, int P, pthread_barrier_t *barrier, int *sorted) {
 	int start_odd, start_even, end, sorted_aux;
 	individual aux;
@@ -230,37 +143,8 @@ void *thread_function(void *arg) {
 
 		// TODO: DE PARALELIZAT SORTAREA!!!!!
 		if (id == 0) qsort(current_generation, object_count, sizeof(individual), cmpfunc);
-		// pthread_barrier_wait(barrier);
+		pthread_barrier_wait(barrier);
 		// oets(current_generation, object_count, id, P, barrier, sorted);
-		/*
-		merge_sort(id, object_count, P, current_generation);
-		// merging the final 4 parts
-		pthread_barrier_wait(barrier);
-		if (P == 2 && id == 0) {
-			merge(0, (object_count - 1) / 2, object_count - 1, current_generation);
-		} else if (P == 3 && id == 0) {
-			int low0 = 0, high0 = ((double)object_count / P) - 1,
-				high1 = 2 * ((double)object_count / P) - 1,
-				high2 = object_count - 1;
-			merge(low0, high0, high1, current_generation);
-			merge(low0, high1, high2, current_generation);
-			// merge(0, (2 * object_count / 3 - 1) / 2, 2 * object_count / 3 - 1, current_generation);
-			// merge(0, 2 * object_count / 3 - 1, object_count - 1, current_generation);
-		} else if (P == 4) {
-			int low0 = 0, high0 = ((double)object_count / P) - 1,
-				high1 = 2 * ((double)object_count / P) - 1,
-				low2 = 2 * ((double)object_count / P), high2 = 3 * ((double)object_count / P) - 1,
-				high3 = object_count - 1;
-			if (id == 0) merge(low0, high0, high1, current_generation);
-			if (id == 1) merge(low2, high2, high3, current_generation);
-			pthread_barrier_wait(barrier);
-			if (id == 0) merge(low0, high1, high3, current_generation);
-			// merge(0, (object_count / 2 - 1) / 2, object_count / 2 - 1, current_generation);
-			// merge(object_count / 2, object_count / 2 + (object_count - 1 - object_count / 2) / 2, object_count - 1, current_generation);
-			// merge(0, (object_count - 1) / 2, object_count - 1, current_generation);
-		}
-		*/
-		pthread_barrier_wait(barrier);
 
 		/////////////////////////////////////////////////////////////
 
@@ -364,40 +248,7 @@ void *thread_function(void *arg) {
 
 	// TODO: DE PARALELIZAT SORTAREA!!!!!
 	if (id == 0) qsort(current_generation, object_count, sizeof(individual), cmpfunc);
-	pthread_barrier_wait(barrier);
 	// oets(current_generation, object_count, id, P, barrier, sorted);
-
-	//*************************************
-/*
-	merge_sort(id, object_count, P, current_generation);
-	// merging the final 4 parts
-	pthread_barrier_wait(barrier);
-	if (P == 2 && id == 0) {
-		merge(0, (object_count - 1) / 2, object_count - 1, current_generation);
-	} else if (P == 3 && id == 0) {
-		int low0 = 0, high0 = ((double)object_count / P) - 1,
-			high1 = 2 * ((double)object_count / P) - 1,
-			high2 = object_count - 1;
-		merge(low0, high0, high1, current_generation);
-		merge(low0, high1, high2, current_generation);
-		// merge(0, (2 * object_count / 3 - 1) / 2, 2 * object_count / 3 - 1, current_generation);
-		// merge(0, 2 * object_count / 3 - 1, object_count - 1, current_generation);
-	} else if (P == 4) {
-		int low0 = 0, high0 = ((double)object_count / P) - 1,
-			high1 = 2 * ((double)object_count / P) - 1,
-			low2 = 2 * ((double)object_count / P), high2 = 3 * ((double)object_count / P) - 1,
-			high3 = object_count - 1;
-		if (id == 0) merge(low0, high0, high1, current_generation);
-		if (id == 1) merge(low2, high2, high3, current_generation);
-		pthread_barrier_wait(barrier);
-		if (id == 0) merge(low0, high1, high3, current_generation);
-		// merge(0, (object_count / 2 - 1) / 2, object_count / 2 - 1, current_generation);
-		// merge(object_count / 2, object_count / 2 + (object_count - 1 - object_count / 2) / 2, object_count - 1, current_generation);
-		// merge(0, (object_count - 1) / 2, object_count - 1, current_generation);
-	}
-	pthread_barrier_wait(barrier);
-*/
-	//*****************************************
 
 	if (id == 0) {
 		print_best_fitness(current_generation);
