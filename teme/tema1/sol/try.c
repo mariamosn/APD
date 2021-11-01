@@ -242,7 +242,7 @@ void *thread_function(void *arg) {
 		if (end_local > count) {
 			end_local = count;
 		}
-		for (int i = start_local; i < end_local; i += 2) {
+		for (int i = start_local; i < end_local - 1; i += 2) {
 			crossover(current_generation + i, next_generation + cursor + i, k);
 		}
 
