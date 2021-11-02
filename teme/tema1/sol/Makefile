@@ -3,12 +3,12 @@
 
 build:
 	@echo "Building..."
-	@gcc -o tema1_par try.c genetic_algorithm.c -lpthread -lm -Wall -Werror
+	@gcc -o tema1_par tema1.c genetic_algorithm.c tema1_helper.c -lpthread -lm -Wall -Werror
 	@echo "Done"
 
 build_debug:
 	@echo "Building debug..."
-	@gcc -o tema1_par try.c genetic_algorithm.c -lpthread -lm -Wall -Werror -O0 -g3 -DDEBUG
+	@gcc -o tema1_par tema1.c genetic_algorithm.c tema1_helper.c -lpthread -lm -Wall -Werror -O0 -g3 -DDEBUG
 	@echo "Done"
 
 clean:

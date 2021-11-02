@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include "genetic_algorithm.h"
 
-int read_input(sack_object **objects, int *object_count, int *sack_capacity, int *generations_count, int *P, int argc, char *argv[])
+int read_input(sack_object **objects, int *object_count, int *sack_capacity,
+				int *generations_count, int *P, int argc, char *argv[])
 {
 	FILE *fp;
 
@@ -27,10 +28,12 @@ int read_input(sack_object **objects, int *object_count, int *sack_capacity, int
 		return 0;
 	}
 
-	sack_object *tmp_objects = (sack_object *) calloc(*object_count, sizeof(sack_object));
+	sack_object *tmp_objects = (sack_object *) calloc(*object_count,
+														sizeof(sack_object));
 
 	for (int i = 0; i < *object_count; ++i) {
-		if (fscanf(fp, "%d %d", &tmp_objects[i].profit, &tmp_objects[i].weight) < 2) {
+		if (fscanf(fp, "%d %d", &tmp_objects[i].profit,
+					&tmp_objects[i].weight) < 2) {
 			free(objects);
 			fclose(fp);
 			return 0;
@@ -76,7 +79,9 @@ void print_best_fitness(const individual *generation)
 	printf("%d\n", generation[0].fitness);
 }
 
-void compute_fitness_function(const sack_object *objects, individual *generation, int object_count, int sack_capacity)
+void compute_fitness_function(const sack_object *objects,
+								individual *generation, int object_count,
+								int sack_capacity)
 {
 	int weight;
 	int profit;
@@ -102,18 +107,21 @@ int cmpfunc(const void *a, const void *b)
 	individual *first = (individual *) a;
 	individual *second = (individual *) b;
 
-	int res = second->fitness - first->fitness; // decreasing by fitness
+	// decreasing by fitness
+	int res = second -> fitness - first -> fitness;
 	if (res == 0) {
 		int first_count = 0, second_count = 0;
 
-		for (i = 0; i < first->chromosome_length && i < second->chromosome_length; ++i) {
-			first_count += first->chromosomes[i];
-			second_count += second->chromosomes[i];
+		for (i = 0; i < first -> chromosome_length &&
+				i < second -> chromosome_length; ++i) {
+			first_count += first -> chromosomes[i];
+			second_count += second -> chromosomes[i];
 		}
 
-		res = first_count - second_count; // increasing by number of objects in the sack
+		// increasing by number of objects in the sack
+		res = first_count - second_count;
 		if (res == 0) {
-			return second->index - first->index;
+			return second -> index - first -> index;
 		}
 	}
 
@@ -123,30 +131,33 @@ int cmpfunc(const void *a, const void *b)
 void mutate_bit_string_1(const individual *ind, int generation_index)
 {
 	int i, mutation_size;
-	int step = 1 + generation_index % (ind->chromosome_length - 2);
+	int step = 1 + generation_index % (ind -> chromosome_length - 2);
 
-	if (ind->index % 2 == 0) {
-		// for even-indexed individuals, mutate the first 40% chromosomes by a given step
-		mutation_size = ind->chromosome_length * 4 / 10;
+	if (ind -> index % 2 == 0) {
+		// for even-indexed individuals,
+		// mutate the first 40% chromosomes by a given step
+		mutation_size = ind -> chromosome_length * 4 / 10;
 		for (i = 0; i < mutation_size; i += step) {
-			ind->chromosomes[i] = 1 - ind->chromosomes[i];
+			ind -> chromosomes[i] = 1 - ind -> chromosomes[i];
 		}
 	} else {
-		// for even-indexed individuals, mutate the last 80% chromosomes by a given step
-		mutation_size = ind->chromosome_length * 8 / 10;
-		for (i = ind->chromosome_length - mutation_size; i < ind->chromosome_length; i += step) {
-			ind->chromosomes[i] = 1 - ind->chromosomes[i];
+		// for even-indexed individuals,
+		// mutate the last 80% chromosomes by a given step
+		mutation_size = ind -> chromosome_length * 8 / 10;
+		for (i = ind -> chromosome_length - mutation_size;
+				i < ind -> chromosome_length; i += step) {
+			ind -> chromosomes[i] = 1 - ind -> chromosomes[i];
 		}
 	}
 }
 
 void mutate_bit_string_2(const individual *ind, int generation_index)
 {
-	int step = 1 + generation_index % (ind->chromosome_length - 2);
+	int step = 1 + generation_index % (ind -> chromosome_length - 2);
 
 	// mutate all chromosomes by a given step
-	for (int i = 0; i < ind->chromosome_length; i += step) {
-		ind->chromosomes[i] = 1 - ind->chromosomes[i];
+	for (int i = 0; i < ind -> chromosome_length; i += step) {
+		ind -> chromosomes[i] = 1 - ind -> chromosomes[i];
 	}
 }
 
@@ -154,48 +165,57 @@ void crossover(individual *parent1, individual *child1, int generation_index)
 {
 	individual *parent2 = parent1 + 1;
 	individual *child2 = child1 + 1;
-	int count = 1 + generation_index % parent1->chromosome_length;
+	int count = 1 + generation_index % parent1 -> chromosome_length;
 
-	memcpy(child1->chromosomes, parent1->chromosomes, count * sizeof(int));
-	memcpy(child1->chromosomes + count, parent2->chromosomes + count, (parent1->chromosome_length - count) * sizeof(int));
+	memcpy(child1 -> chromosomes, parent1 -> chromosomes, count * sizeof(int));
+	memcpy(child1 -> chromosomes + count, parent2 -> chromosomes + count,
+			(parent1 -> chromosome_length - count) * sizeof(int));
 
-	memcpy(child2->chromosomes, parent2->chromosomes, count * sizeof(int));
-	memcpy(child2->chromosomes + count, parent1->chromosomes + count, (parent1->chromosome_length - count) * sizeof(int));
+	memcpy(child2 -> chromosomes, parent2 -> chromosomes, count * sizeof(int));
+	memcpy(child2 -> chromosomes + count, parent1 -> chromosomes + count,
+			(parent1 -> chromosome_length - count) * sizeof(int));
 }
 
 void copy_individual(const individual *from, const individual *to)
 {
-	memcpy(to->chromosomes, from->chromosomes, from->chromosome_length * sizeof(int));
+	memcpy(to -> chromosomes, from -> chromosomes,
+			from -> chromosome_length * sizeof(int));
 }
 
 void free_generation(individual *generation)
 {
 	int i;
 
-	for (i = 0; i < generation->chromosome_length; ++i) {
+	for (i = 0; i < generation -> chromosome_length; ++i) {
 		free(generation[i].chromosomes);
 		generation[i].chromosomes = NULL;
 		generation[i].fitness = 0;
 	}
 }
 
-void run_genetic_algorithm(const sack_object *objects, int object_count, int generations_count, int sack_capacity)
+void run_genetic_algorithm(const sack_object *objects, int object_count,
+							int generations_count, int sack_capacity)
 {
 	int count, cursor;
-	individual *current_generation = (individual*) calloc(object_count, sizeof(individual));
-	individual *next_generation = (individual*) calloc(object_count, sizeof(individual));
+	individual *current_generation = (individual*) calloc(object_count,
+															sizeof(individual));
+	individual *next_generation = (individual*) calloc(object_count,
+														sizeof(individual));
 	individual *tmp = NULL;
 
-	// set initial generation (composed of object_count individuals with a single item in the sack)
+	// set initial generation
+	// (composed of object_count individuals with a single item in the sack)
 	for (int i = 0; i < object_count; ++i) {
 		current_generation[i].fitness = 0;
-		current_generation[i].chromosomes = (int*) calloc(object_count, sizeof(int));
+		current_generation[i].chromosomes = (int*) calloc(object_count,
+															sizeof(int));
 		current_generation[i].chromosomes[i] = 1;
 		current_generation[i].index = i;
 		current_generation[i].chromosome_length = object_count;
 
 		next_generation[i].fitness = 0;
-		next_generation[i].chromosomes = (int*) calloc(object_count, sizeof(int));
+		next_generation[i].chromosomes = (int*) calloc(object_count,
+														sizeof(int));
 		next_generation[i].index = i;
 		next_generation[i].chromosome_length = object_count;
 	}
@@ -205,7 +225,8 @@ void run_genetic_algorithm(const sack_object *objects, int object_count, int gen
 		cursor = 0;
 
 		// compute fitness and sort by it
-		compute_fitness_function(objects, current_generation, object_count, sack_capacity);
+		compute_fitness_function(objects, current_generation, object_count,
+									sack_capacity);
 		qsort(current_generation, object_count, sizeof(individual), cmpfunc);
 
 		// keep first 30% children (elite children selection)
@@ -215,18 +236,20 @@ void run_genetic_algorithm(const sack_object *objects, int object_count, int gen
 		}
 		cursor = count;
 
-		// mutate first 20% children with the first version of bit string mutation
+		// mutate first 20% children with the 1st version of bit string mutation
 		count = object_count * 2 / 10;
 		for (int i = 0; i < count; ++i) {
-			copy_individual(current_generation + i, next_generation + cursor + i);
+			copy_individual(current_generation + i,
+							next_generation + cursor + i);
 			mutate_bit_string_1(next_generation + cursor + i, k);
 		}
 		cursor += count;
 
-		// mutate next 20% children with the second version of bit string mutation
+		// mutate next 20% children with the 2nd version of bit string mutation
 		count = object_count * 2 / 10;
 		for (int i = 0; i < count; ++i) {
-			copy_individual(current_generation + i + count, next_generation + cursor + i);
+			copy_individual(current_generation + i + count,
+							next_generation + cursor + i);
 			mutate_bit_string_2(next_generation + cursor + i, k);
 		}
 		cursor += count;
@@ -236,7 +259,8 @@ void run_genetic_algorithm(const sack_object *objects, int object_count, int gen
 		count = object_count * 3 / 10;
 
 		if (count % 2 == 1) {
-			copy_individual(current_generation + object_count - 1, next_generation + cursor + count - 1);
+			copy_individual(current_generation + object_count - 1,
+							next_generation + cursor + count - 1);
 			count--;
 		}
 
@@ -258,7 +282,8 @@ void run_genetic_algorithm(const sack_object *objects, int object_count, int gen
 		}
 	}
 
-	compute_fitness_function(objects, current_generation, object_count, sack_capacity);
+	compute_fitness_function(objects, current_generation, object_count,
+								sack_capacity);
 	qsort(current_generation, object_count, sizeof(individual), cmpfunc);
 	print_best_fitness(current_generation);
 
