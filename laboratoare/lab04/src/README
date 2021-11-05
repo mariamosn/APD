@@ -1,0 +1,23 @@
+Maria Moșneag
+333CA
+Lab04
+
+bug1
+    În main era apelată metoda run în loc de start, deci operațiile erau efectuate secvențial.
+
+bug2
+    Nu avem un deadlock pentru că un singur thread poate trece de prima barieră și apoi, când întâlnește cea de-a doua
+barieră, nu va mai fi nevoit să aștepte (fiind singurul care accesează acea porțiune).
+
+bug3
+    Am schimbat variabila de care depindea al doilea synchronized.
+
+bug4
+    Variabila keepRunning trebuie să fie de tip volatile pentru a evita race condition-ul.
+
+bug5
+    Am separat cele două zone synchronized pentru că cele două thread-uri se „blocau” unul pe celălalt în cazul inițial.
+
+bug6
+    Am făcut metoda getInstance synchronized. (Totuși, rezultatul pe care îl obțineam eu inițial era cel corect - și
+înainte de modificări.)

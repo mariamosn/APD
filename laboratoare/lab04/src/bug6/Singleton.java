@@ -2,7 +2,9 @@ package bug6;
 
 /**
  * What is this design pattern?
- * What it could be wrong in this case? How many instances are created in this context?
+ * What could be wrong in this case? How many instances are created in this context?
+ *
+ * Modify a single line of code such that the Singleton to work as expected.
  */
 
 public class Singleton {
@@ -13,7 +15,7 @@ public class Singleton {
 
     }
 
-    public static Singleton getInstance() {
+    public static synchronized Singleton getInstance() {
         if (instance == null) {
             System.out.println("Creating only one instance");
             instance = new Singleton();

@@ -1,4 +1,8 @@
 package bug1;
+/*
+	Two threads incrementing the same value in parallel should be in a race condition. However, something strage happens.
+	Modify the code such that we can see the bad consequences of the race condition.
+ */
 
 public class Main {
 	public static final int N = 100000;
@@ -11,7 +15,8 @@ public class Main {
 			MyThread.value = 0;
 			for (int i = 0; i < 2; i++) {
 				threads[i] = new Thread(new MyThread());
-				threads[i].run();
+				// threads[i].run();
+				threads[i].start();
 			}
 			for (int i = 0; i < 2; i++) {
 				try {
