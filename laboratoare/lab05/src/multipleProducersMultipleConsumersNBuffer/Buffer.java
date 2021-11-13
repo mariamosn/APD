@@ -1,24 +1,46 @@
 package multipleProducersMultipleConsumersNBuffer;
 
-import java.util.Queue;
+import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
 
-/**
- * @author Gabriel Gutu <gabriel.gutu at upb.ro>
- *
- */
 public class Buffer {
     
-    Queue queue;
+    LinkedList<Integer> queue;
+    Semaphore gol;
+    Semaphore plin;
     
     public Buffer(int size) {
-        queue = new LimitedQueue(size);
+        queue = new LimitedQueue<>(size);
+        gol = new Semaphore(size);
+        plin = new Semaphore(0);
     }
 
-	void put(int value) {
-        queue.add(value);        
+	public void put(int value) {
+        try {
+            gol.acquire();
+        } catch (Exception e) {
+
+        }
+        synchronized (this) {
+            queue.add(value);
+        }
+        plin.release();
 	}
 
-	int get() {
-        return (int)queue.poll();
+	public int get() {
+        int a = -1;
+        try {
+            plin.acquire();
+        } catch (Exception e) {
+
+        }
+        synchronized (this) {
+            Integer result = queue.poll();
+            if (result != null) {
+                a = result;
+            }
+        }
+        gol.release();
+        return a;
 	}
 }
