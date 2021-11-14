@@ -24,8 +24,7 @@ void merge(int low, int mid, int high, individual *a);
  
 // merge sort function
 void merge_sort_h(int low, int high, individual *v);
- 
-// thread function for multi-threading
+
 void merge_sort(int id, int N, int P, individual *v);
 
 void sort(int id, int object_count, int P, individual *current_generation,

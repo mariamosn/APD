@@ -11,26 +11,24 @@
 void merge(int low, int mid, int high, individual *a) {
 	individual left[mid - low + 1];
 	individual right[high - mid];
+
+    int left_size = mid - low + 1, right_size = high - mid, i, j;
  
-    // n1 is the size of the left part
-    // n2 is the size of the right part
-    int n1 = mid - low + 1, n2 = high - mid, i, j;
- 
-    // storing values in left part
-    for (i = 0; i < n1; i++) {
+    // saving values in the left part
+    for (i = 0; i < left_size; i++) {
         left[i] = a[i + low];
     }
  
-    // storing values in right part
-    for (i = 0; i < n2; i++) {
+    // saving values in the right part
+    for (i = 0; i < right_size; i++) {
         right[i] = a[i + mid + 1];
     }
  
     int k = low;
     i = j = 0;
  
-    // merge left and right in ascending order
-    while (i < n1 && j < n2) {
+    // merge left and right
+    while (i < left_size && j < right_size) {
 		if (cmpfunc(&left[i], &right[j]) <= 0) {
             a[k++] = left[i++];
         } else {
@@ -38,45 +36,45 @@ void merge(int low, int mid, int high, individual *a) {
         }
     }
  
-    // insert remaining values from left
-    while (i < n1) {
+    // insert the remaining values from left
+    while (i < left_size) {
         a[k++] = left[i++];
     }
  
-    // insert remaining values from right
-    while (j < n2) {
+    // insert the remaining values from right
+    while (j < right_size) {
         a[k++] = right[j++];
     }
 }
  
-// merge sort function
+// merge sort helper function
 void merge_sort_h(int low, int high, individual *v) {
     // calculating mid point of array
     int mid = low + (high - low) / 2;
     if (low < high) {
  
-        // calling first half
+        // first half
         merge_sort_h(low, mid, v);
  
-        // calling second half
+        // second half
         merge_sort_h(mid + 1, high, v);
  
         // merging the two halves
         merge(low, mid, high, v);
     }
 }
- 
-// thread function for multi-threading
+
 void merge_sort(int id, int N, int P, individual *v) { 
-    // calculating low and high
+    // calculating low and high for the current thread
     int low = id * ((double)N / P);
     int high = (id + 1) * ((double)N / P) - 1;
 	if (id == P - 1) {
 		high = N - 1;
 	}
  
-    // evaluating mid point
+	// get the mid point
     int mid = low + (high - low) / 2;
+
     if (low < high) {
         merge_sort_h(low, mid, v);
         merge_sort_h(mid + 1, high, v);
@@ -88,7 +86,7 @@ void sort(int id, int object_count, int P, individual *current_generation,
 			pthread_barrier_t *barrier) {
 	merge_sort(id, object_count, P, current_generation);
 	
-	// merging the final 4 parts
+	// merge the final 4 parts
 	pthread_barrier_wait(barrier);
 	if (P == 2 && id == 0) {
 		merge(0, (object_count - 1) / 2, object_count - 1, current_generation);
