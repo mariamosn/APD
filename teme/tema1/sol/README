@@ -1,0 +1,104 @@
+Maria Moșneag
+333CA
+Tema 1 APD
+
+tema1.c
+    - main: apelează funcția de citire (read_input) și
+            run_parallel_genetic_algorithm
+
+    - run_parallel_genetic_algorithm:
+        + funcție responsabilă de crearea și distrugerea thread-urilor
+        + pentru transmiterea datelor utile către thread-uri am folosit
+        structura my_arg (definită în tema1_helper.h)
+        + tot aici este declarată și bariera, atfel încât să poată fi apoi
+        transmisă tuturor thread-urilor
+        + de asemenea, aici se eliberează și o parte dintre memoria alocată
+
+tema1_helper.c & tema1_helper.h
+    - structura my_arg: folosită pentru transmiterea datelor către thread-uri
+
+    - thread_function:
+        + funcția executată de fiecare thread
+        + conține logica algoritmului genetic
+            Pentru a facilita paralelizarea, am împărțit algoritmul în mai mulți
+            pași. După fiecare pas, thread-urile trebuie să fie sincronizate,
+            iar pentru aceasta am folosit bariera.
+        + apelează mai multe funcții auxiliare, "acțiunile" pașilor identificați
+        fiind efectuate prin intermediul acestor funcții
+        + tot aici se și afișează rezultatele obținute (atât cele finale, cât și
+        cele parțiale)
+            Întrucât afișarea trebuie să fie făcută o singură dată (așadar nu de
+            către fiecare thread) am ales ca "responsabilul" pentru acest lucru
+            să fie thread-ul cu id-ul 0.
+        + de asemenea, aici se eliberează restul resurselor
+
+    - set_initial_generation:
+        + setează valorile inițiale în current_generation și în next_generation,
+        între indicii start și end primiți ca parametri, astfel încât fiecare
+        thread să efectueze o parte din "muncă"
+
+    - compute_fitness:
+        + calculează fitness-ul fiecărui individ din generație, între indicii
+        start și end primiți ca parametri, astfel încât fiecare thread să
+        efectueze o parte din "muncă" (la fel ca în cazul
+        set_initial_generation)
+
+    - elite_children_selection:
+        + păstrează primii 30% din indivizi pentru generația următoare
+        + în funcție de id, fiecare thread se ocupă de altă bucată din array
+        + folosește copy_individual din generic_algorithm.h
+
+    - first_mutation:
+        + aplică primul tip de mutație pentru primii 20% dintre indivizi
+        + împărțirea sarcinilor între thread-uri se face în mod asemănător cu
+        cazul precedent
+        + folosește copy_individual și mutate_bit_string_1 din
+        generic_algorithm.h
+
+    - second_mutation:
+        + aplică al doilea tip de mutație pentru următorii 20% dintre indivizi
+        + împărțirea sarcinilor între thread-uri se face în mod asemănător cu
+        cazurile precedente
+        + folosește copy_individual și mutate_bit_string_2 din
+        generic_algorithm.h
+
+    - crossover_stage:
+        + aplică crossover-ul într-un punct pe primii 30% dintre indivizii din
+        generație
+        + folosește copy_individual și crossover din generic_algorithm.h
+
+
+    - sort:
+        + funcția sortează indivizii dintr-o generație descrescător în funcție
+        de fitness
+        + folosește o variantă paralelizată a merge sort:
+            Se împarte recursiv array-ul folosindu-se tehnica Divide et impera,
+            apoi subarray-urile sunt reunite.
+            Cum numărul de thread-uri nu este mereu același, am ales să tratez
+            separat ultima etapă de refacere a vectorului ordonat, utilizând
+            pentru aceasta numai unul sau două thread-uri, în funcție de caz.
+        + funcții auxiliare utilizate: merge_sort, merge, merge_sort_h
+            merge_sort: împarte vectorul între thread-uri
+            merge_sort_h: împarte în subarray-uri
+            merge: reunește subarray-urile, pe baza criteriilor de ordonare
+                dorite (pentru aceasta folosește cmpfunc din genetic_algorith.h)
+        + sursă de documentare:
+            https://www.geeksforgeeks.org/merge-sort-using-multi-threading/
+        + mini-feedback:
+            Partea de sortare mi s-a părut cea mai dificilă, dar a fost și
+            interesantă și utilă pentru o mai bună înțelegere a conceptelor.
+
+    - free_resources:
+        + eliberează o parte dintre resurse
+        + pentru eficientizare, și în această etapă este împărțit efortul între
+        thread-urile disponibile
+
+genetic_algorith.c & genetic_algorith.h
+    - sunt cele oferite în schelet
+    - conțin funcții ce sunt utilizate de o parte dintre funcțiile mai sus
+    menționate
+
+sack_object.h & individual.h
+    - sunt cele oferite în schelet
+    - conțin definițiile unora dintre structurile folosite în cadrul
+    algoritmului genetic
