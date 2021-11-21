@@ -1,15 +1,18 @@
 package parallelTree;
 
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Semaphore;
 
 public class Main {
 	static int N_ITERATIONS = 100;
-
+	public static Semaphore sem = new Semaphore(1);
+	public static CyclicBarrier barrier = new CyclicBarrier(3);
 	public static void main(String[] args) {
 		Thread[] threads = new Thread[3];
 		System.out.println("Parallel tree problem");
 		
 		for (int j = 0; j < N_ITERATIONS; j++) {
+			System.out.println(j);
 			TreeNode tree = new TreeNode(1);
 			threads[0] = new Thread(new ReadTreePart(tree, "treePart1.txt"));
 			threads[1] = new Thread(new ReadTreePart(tree, "treePart2.txt"));
