@@ -30,9 +30,22 @@ public class ReadTreePart implements Runnable {
 					treeNode = tree.getNode(root);
 				}
 
+				try {
+					Main.sem.acquire();
+				} catch (Exception e) {
+					System.out.println(e.getMessage());
+				}
 				treeNode.addChild(new TreeNode(child));
+				Main.sem.release();
 			}
 		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		try {
+			Main.barrier.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		} catch (BrokenBarrierException e) {
 			e.printStackTrace();
 		}
 	}
