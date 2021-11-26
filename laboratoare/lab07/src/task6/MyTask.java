@@ -1,29 +1,21 @@
-package task3;
+package task6;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RecursiveTask;
 
-public class MyRunnable implements Runnable {
+public class MyTask extends RecursiveTask<Void> {
     private int[] graph;
     private int step;
-    private final ExecutorService tpe;
-    private final AtomicInteger inQueue;
 
-    public MyRunnable(int[] graph, int step, ExecutorService tpe, AtomicInteger inQueue) {
+    public MyTask(int[] graph, int step) {
         this.graph = graph;
         this.step = step;
-        this.tpe = tpe;
-        this.inQueue = inQueue;
     }
 
-    @Override
-    public void run() {
+    public static void queens(int[] graph, int step) {
         if (MyMain.N == step) {
             printQueens(graph);
-            int left = inQueue.decrementAndGet();
-            if (left == 0) {
-                tpe.shutdown();
-            }
             return;
         }
         for (int i = 0; i < Main.N; ++i) {
@@ -31,15 +23,35 @@ public class MyRunnable implements Runnable {
             newGraph[step] = i;
 
             if (check(newGraph, step)) {
-                inQueue.incrementAndGet();
-                tpe.submit(new MyRunnable(newGraph, step + 1, tpe, inQueue));
+                queens(newGraph, step + 1);
             }
         }
+    }
 
-        int left = inQueue.decrementAndGet();
-        if (left == 0) {
-            tpe.shutdown();
+    @Override
+    protected Void compute() {
+        if (MyMain.N == step) {
+            printQueens(graph);
+            return null;
         }
+
+        List<MyTask> tasks = new ArrayList<>();
+        for (int i = 0; i < Main.N; ++i) {
+            int[] newGraph = graph.clone();
+            newGraph[step] = i;
+
+            if (check(newGraph, step)) {
+                // queens(newGraph, step + 1);
+                MyTask t = new MyTask(newGraph, step + 1);
+                tasks.add(t);
+                t.fork();
+            }
+        }
+        for (var task: tasks) {
+            task.join();
+        }
+
+        return null;
     }
 
     private static boolean check(int[] arr, int step) {

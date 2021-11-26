@@ -36,6 +36,7 @@ public class Main {
             }
         }
     }
+
     public static void main(String[] args) {
         int[] graph = new int[N];
         queens(graph, 0);
