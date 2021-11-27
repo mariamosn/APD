@@ -11,7 +11,6 @@ public class MapTask {
         this.docName = docName;
         this.offset = offset;
         this.size = size;
-        // System.out.println(docName + " " + offset);
     }
 
     public String getDocName() {

@@ -1,13 +1,14 @@
 package map;
 
-import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class MapWorker implements Runnable {
     private Integer id;
     private Integer numOfWorkers;
+    private List<MapResult> results;
     private ArrayList<MapTask> tasks;
     private Integer start;
     private Integer end;
@@ -21,10 +22,11 @@ public class MapWorker implements Runnable {
 
     private String delim = ";:/? ̃\\.,><‘[]{}()!@#$%ˆ&- +’=*”| \t\n";
 
-    public MapWorker(Integer id, ArrayList<MapTask> tasks, Integer numOfWorkers) {
+    public MapWorker(Integer id, ArrayList<MapTask> tasks, Integer numOfWorkers, List<MapResult> results) {
         this.id = id;
         this.tasks = tasks;
         this.numOfWorkers = numOfWorkers;
+        this.results = results;
         start = (int) (id * (double)tasks.size() / numOfWorkers);
         end = (int) ((id + 1) * (double)tasks.size() / numOfWorkers);
         if (end > tasks.size()) {
@@ -42,7 +44,6 @@ public class MapWorker implements Runnable {
                 String fragment = null;
                 // preia un task
                 MapTask crtTask = tasks.get(i);
-                System.out.println(id + " " + crtTask.getDocName() + " " + crtTask.getOffset());
 
                 // citeste fragmentul de dim D din doc
                 if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
@@ -63,7 +64,6 @@ public class MapWorker implements Runnable {
                 in.seek(off);
                 in.readFully(buf);
                 fragment = new String(buf);
-                System.out.println(fragment);
 
                 // construieste dictionarul si lista de cuvinte de lungime maxima
                 String[] words = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
@@ -92,7 +92,7 @@ public class MapWorker implements Runnable {
 
                 // pune rezultatul intr-un MapResult
                 MapResult result = new MapResult(crtTask.getDocName(), map, maxLenWords);
-                MapCoordinator.results.add(result);
+                results.add(result);
             }
 
             in.close();

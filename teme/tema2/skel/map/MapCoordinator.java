@@ -12,23 +12,25 @@ public class MapCoordinator {
     private ArrayList<String> inputFiles;
     private Integer fragmentSize;
     private Integer numberOfDocs;
-    private ArrayList<MapTask> tasks = new ArrayList<>();
-    private ArrayList<Thread> threads = new ArrayList<>();
-    public static List<MapResult> results = Collections.synchronizedList(new ArrayList<>());
+    private ArrayList<MapTask> tasks;
+    private ArrayList<Thread> threads;
+    private List<MapResult> results;
 
     public MapCoordinator(Integer numOfWorkers, ArrayList<String> inputFiles, Integer fragmentSize, Integer numberOfDocs) {
         this.numOfWorkers = numOfWorkers;
         this.inputFiles = inputFiles;
         this.fragmentSize = fragmentSize;
         this.numberOfDocs = numberOfDocs;
+        tasks = new ArrayList<>();
+        threads = new ArrayList<>();
+        results = Collections.synchronizedList(new ArrayList<>());
     }
 
-    public void map() {
+    public List<MapResult> map() {
         // imparte fiecare document in mai multe task-uri
         for (String doc : inputFiles) {
             try {
                 long bytes = Files.size(Paths.get(doc));
-                // System.out.println(bytes);
                 for (int i = 0; i < bytes; i += fragmentSize) {
                     MapTask task = new MapTask(doc, i, fragmentSize);
                     tasks.add(task);
@@ -42,7 +44,7 @@ public class MapCoordinator {
         // imparte task-urile la workeri
         for (int i = 0; i < numOfWorkers; i++) {
             // aici trebuie sa pornesc mai multe thread-uri
-            Thread thread = new Thread(new MapWorker(i, tasks, numOfWorkers));
+            Thread thread = new Thread(new MapWorker(i, tasks, numOfWorkers, results));
             threads.add(thread);
             threads.get(threads.size() - 1).start();
         }
@@ -55,8 +57,7 @@ public class MapCoordinator {
                 e.printStackTrace();
             }
         }
-    }
 
-    // preia rezultatele cumva
-    // creeaza task-uri noi pe baza lor?
+        return results;
+    }
 }
