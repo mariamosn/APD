@@ -2,7 +2,6 @@ package reduce;
 
 import map.MapResult;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
 import java.util.concurrent.Semaphore;

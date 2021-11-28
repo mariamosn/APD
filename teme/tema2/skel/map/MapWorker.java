@@ -44,6 +44,7 @@ public class MapWorker implements Runnable {
                 String fragment = null;
                 // preia un task
                 MapTask crtTask = tasks.get(i);
+                // System.out.println(crtTask.getDocName());
 
                 // citeste fragmentul de dim D din doc
                 if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
@@ -66,7 +67,10 @@ public class MapWorker implements Runnable {
                 fragment = new String(buf);
 
                 // construieste dictionarul si lista de cuvinte de lungime maxima
-                String[] words = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                // String[] words = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                // String[] words = fragment.split("['”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                // String[] words = fragment.split("([]});:/? ̃\\\\.,>+\\[<‘{(!@#$%ˆ&’=*”|\t\n\r-]+|$)");
+                String[] words = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
                 int st = 0;
                 if (crtTask.getOffset() != 0 && delim.indexOf(fragment.charAt(0)) == -1) {
                     st = 1;
@@ -84,7 +88,10 @@ public class MapWorker implements Runnable {
                     in.seek(lastWord);
                     in.readFully(buf2);
                     fragment = new String(buf2);
-                    String[] words2 = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                    // String[] words2 = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                    // String[] words2 = fragment.split("['”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
+                    // String[] words2 = fragment.split("([]});:/? ̃\\\\.,>+\\[<‘{(!@#$%ˆ&’=*”|\t\n\r-]+|$)");
+                    String[] words2 = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
                     updateResult(words2[0]);
                 }
 
@@ -103,6 +110,7 @@ public class MapWorker implements Runnable {
     }
 
     private void updateResult(String word) {
+        // System.out.println(word);
         if (map.containsKey(word.length())) {
             map.replace(word.length(), map.get(word.length()) + 1);
         } else {
