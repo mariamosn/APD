@@ -2,7 +2,6 @@ package map;
 
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class MapWorker implements Runnable {
                 this.map = new HashMap<>();
                 this.maxLenWords = new ArrayList<>();
                 this.maxLen = 0;
-                String fragment = null;
+                String fragment;
                 // preia un task
                 MapTask crtTask = tasks.get(i);
 
@@ -65,20 +64,13 @@ public class MapWorker implements Runnable {
                 in.seek(off);
                 in.readFully(buf);
                 fragment = new String(buf);
-                if (crtTask.getDocName().equals("tests/files/alls_well_act1")) {
-                    // System.out.println("-------\n" + fragment + "\n");
-                }
 
                 // construieste dictionarul si lista de cuvinte de lungime maxima
-                // String[] words = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
-                // String[] words = fragment.split("['”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
-                // String[] words = fragment.split("([]});:/? ̃\\\\.,>+\\[<‘{(!@#$%ˆ&’=*”|\t\n\r-]+|$)");
                 String[] words = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
                 int st = 0;
                 if (crtTask.getOffset() != 0 && delim.indexOf(fragment.charAt(0)) == -1) {
                     st = 1;
                 }
-                // System.out.println("//////////////\nPrimul :" + words[st] + "()" + words[st + 1]);
                 for (int j = st; j < words.length - 1; j++) {
                     updateResult(words[j]);
                 }
@@ -90,18 +82,9 @@ public class MapWorker implements Runnable {
                     in.seek(lastWord);
                     in.readFully(buf2);
                     fragment = new String(buf2);
-                    if (crtTask.getDocName().equals("tests/files/alls_well_act1")) {
-                        // System.out.println("-------\n" + fragment.subSequence(0, 13) + "\n");
-                    }
-                    // String[] words2 = fragment.split("[”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
-                    // String[] words2 = fragment.split("['”;:/ ̃,><‘@}!#%ˆ&_’= \n\r\t?.{()$+*\"|\\\\\\[\\]-]+");
-                    // String[] words2 = fragment.split("([]});:/? ̃\\\\.,>+\\[<‘{(!@#$%ˆ&’=*”|\t\n\r-]+|$)");
                     String[] words2 = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
-                    // System.out.println("**************\nUltimul: " + words2[0]);
                     updateResult(words2[0]);
                 }
-
-
 
                 // pune rezultatul intr-un MapResult
                 MapResult result = new MapResult(crtTask.getDocName(), map, maxLenWords);
@@ -116,7 +99,6 @@ public class MapWorker implements Runnable {
     }
 
     private void updateResult(String word) {
-        // System.out.println("----" + word + "----");
         if (word.length() < 1) {
             return;
         }
@@ -129,6 +111,8 @@ public class MapWorker implements Runnable {
         if (word.length() > maxLen) {
             maxLen = word.length();
             maxLenWords.clear();
+            maxLenWords.add(word);
+        } else if (word.length() == maxLen) {
             maxLenWords.add(word);
         }
     }

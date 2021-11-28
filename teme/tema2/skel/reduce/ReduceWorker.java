@@ -99,8 +99,7 @@ public class ReduceWorker implements Runnable {
 
             // max len already done
 
-            // results.put(crtTask.getDocName(), new ReduceResult(crtTask.getDocName(), rank, maxLen, maxLenWords.size()));
-            results.put(crtTask.getDocName(), new ReduceResult(crtTask.getDocName(), rank, maxLen, map.get(maxLen)));
+            results.put(crtTask.getDocName(), new ReduceResult(crtTask.getDocName(), rank, maxLen, maxLenWords.size()));
         }
     }
 }
