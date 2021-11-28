@@ -44,7 +44,6 @@ public class MapWorker implements Runnable {
                 String fragment = null;
                 // preia un task
                 MapTask crtTask = tasks.get(i);
-                // System.out.println(crtTask.getDocName());
 
                 // citeste fragmentul de dim D din doc
                 if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
@@ -100,6 +99,9 @@ public class MapWorker implements Runnable {
                 // pune rezultatul intr-un MapResult
                 MapResult result = new MapResult(crtTask.getDocName(), map, maxLenWords);
                 results.add(result);
+                if (crtTask.getDocName().equals("tests/files/sonnets_40")) {
+                    // System.out.println(maxLenWords);
+                }
             }
 
             in.close();

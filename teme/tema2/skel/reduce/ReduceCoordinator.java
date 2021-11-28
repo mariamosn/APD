@@ -91,8 +91,9 @@ public class ReduceCoordinator {
         try {
             FileWriter out = new FileWriter(fileOut);
             for (String doc : docs) {
+                String[] aux = doc.split("/");
                 ReduceResult result = results.get(doc);
-                out.write(doc + "," +
+                out.write(aux[aux.length - 1] + "," +
                             String.format("%.2f", result.getRank()) + "," +
                             result.getMaxLen() + "," +
                             result.getNumberOfMaxLen() + "\n");
