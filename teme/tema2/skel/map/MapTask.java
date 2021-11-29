@@ -1,11 +1,12 @@
 package map;
 
-// un task de map
+/**
+ * Conține datele corespunzătoare unui task de map
+ */
 public class MapTask {
     private String docName;
     private Integer offset;
     private Integer size;
-    private MapResult result;
 
     public MapTask(String docName, Integer offset, Integer size) {
         this.docName = docName;
@@ -35,13 +36,5 @@ public class MapTask {
 
     public void setSize(Integer size) {
         this.size = size;
-    }
-
-    public MapResult getResult() {
-        return result;
-    }
-
-    public void setResult(MapResult result) {
-        this.result = result;
     }
 }

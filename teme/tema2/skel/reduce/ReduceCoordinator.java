@@ -1,80 +1,37 @@
 package reduce;
 
 import map.MapResult;
+import map_reduce_generic.Reduce;
 
 import java.io.FileWriter;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 
-public class ReduceCoordinator {
-    private List<MapResult> mapResults;
-    private Integer numOfWorkers;
-    private ArrayList<ReduceTask> tasks;
-    private ArrayList<Thread> threads;
-    private HashMap<String, ArrayList<MapResult>> ht;
-    // private List<ReduceResult> results;
-    private Map<String, ReduceResult> results;
-    private List<Integer> fibonacci;
-    private Semaphore semaphore;
-    private ArrayList<String> docs;
-    private String fileOut;
+/**
+ * Creează task-uri de reduce pentru workeri, gestionează workerii și prelucrează rezultatele finale
+ */
+public class ReduceCoordinator extends Reduce<Map<String, ArrayList<MapResult>>> {
+    private final Map<String, ReduceResult> results;
+    private final List<Integer> fibonacci;
+    private final Semaphore semaphore;
+    private final ArrayList<String> docs;
+    private final String fileOut;
 
-    public ReduceCoordinator(List<MapResult> mapResults, Integer numOfWorkers, ArrayList<String> docs, String fileOut) {
-        this.mapResults = mapResults;
-        this.numOfWorkers = numOfWorkers;
+    public ReduceCoordinator(Integer numOfWorkers,
+                             ArrayList<String> docs, String fileOut) {
+        super(numOfWorkers);
         this.docs = docs;
         this.fileOut = fileOut;
-        tasks = new ArrayList<>();
-        threads = new ArrayList<>();
-        ht = new HashMap<>();
-        // results = Collections.synchronizedList(new ArrayList<>());
+
         results = Collections.synchronizedMap(new HashMap<>());
+        semaphore = new Semaphore(1);
+
         fibonacci = Collections.synchronizedList(new ArrayList<>());
         fibonacci.add(0);
         fibonacci.add(1);
-        semaphore = new Semaphore(1);
     }
 
-    public void reduce() {
-        for (MapResult result : mapResults) {
-            if (ht.containsKey(result.getDocName())) {
-                ArrayList<MapResult> aux = ht.get(result.getDocName());
-                aux.add(result);
-                ht.replace(result.getDocName(), aux);
-            } else {
-                ArrayList<MapResult> aux = new ArrayList<>();
-                aux.add(result);
-                ht.put(result.getDocName(), aux);
-            }
-        }
-
-        for (String doc : ht.keySet()) {
-            ReduceTask task = new ReduceTask(doc, ht.get(doc));
-            tasks.add(task);
-        }
-
-        // imparte task-urile la workeri
-        for (int i = 0; i < numOfWorkers; i++) {
-            // aici trebuie sa pornesc mai multe thread-uri
-            Thread thread = new Thread(new ReduceWorker(i, numOfWorkers, tasks, results, fibonacci, semaphore));
-            threads.add(thread);
-            threads.get(threads.size() - 1).start();
-        }
-
-        for (int i = 0; i < numOfWorkers; i++) {
-            try {
-                threads.get(i).join();
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-            }
-        }
-
-        sort();
-
-        write();
-    }
-
+    // sortează documentele descrescător în funcție de rang
     private void sort() {
         Collections.sort(docs, new Comparator<String>() {
             @Override
@@ -87,15 +44,18 @@ public class ReduceCoordinator {
         });
     }
 
+    // scrie rezultatele finale în fișierul de ieșire
     private void write() {
         try {
             FileWriter out = new FileWriter(fileOut);
             for (String doc : docs) {
+                // determină numele documentului
                 String name = doc;
                 if (doc.contains("/")) {
                     String[] aux = doc.split("/");
                     name = aux[aux.length - 1];
                 }
+
                 ReduceResult result = results.get(doc);
                 out.write(name + "," +
                             String.format("%.2f", result.getRank()) + "," +
@@ -107,5 +67,30 @@ public class ReduceCoordinator {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    // creează task-uri de reduce pe baza rezultatelor din etapa de map
+    protected void createTasks() {
+        for (String doc : mapResults.keySet()) {
+            ReduceTask task = new ReduceTask(doc, mapResults.get(doc));
+            tasks.add(task);
+        }
+    }
+
+    // creează thread-uri (workeri) și împarte task-urile
+    protected void createWorkers() {
+        for (int i = 0; i < numOfWorkers; i++) {
+            Thread thread = new Thread(new ReduceWorker(i, numOfWorkers, tasks, results, fibonacci, semaphore));
+            threads.add(thread);
+            threads.get(threads.size() - 1).start();
+        }
+    }
+
+    protected void finalProcessing() {
+        // sortează documentele în funcție de rang
+        sort();
+
+        // scrie rezultatele finale în fișierul de ieșire
+        write();
     }
 }

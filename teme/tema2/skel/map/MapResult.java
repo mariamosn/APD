@@ -3,6 +3,10 @@ package map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * Conține rezultatele executării operației de map
+ * pornind de la unul dintre task-urile de map disponibile
+ */
 public class MapResult {
     private String docName;
     private HashMap<Integer, Integer> map;

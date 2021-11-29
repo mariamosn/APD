@@ -1,5 +1,9 @@
 package reduce;
 
+/**
+ * Conține rezultatele executării operației de reduce
+ * pornind de la unul dintre task-urile de reduce disponibile
+ */
 public class ReduceResult {
     private String docName;
     private Double rank;

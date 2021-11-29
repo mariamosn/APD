@@ -4,6 +4,9 @@ import map.MapResult;
 
 import java.util.ArrayList;
 
+/**
+ * Conține datele corespunzătoare unui task de reduce
+ */
 public class ReduceTask {
     private String docName;
     private ArrayList<MapResult> mapResults;
@@ -28,10 +31,4 @@ public class ReduceTask {
     public void setMapResults(ArrayList<MapResult> mapResults) {
         this.mapResults = mapResults;
     }
-
-    // cred ca o sa aiba o lista de MapResult pentru un anumit document
-    // combina toate dictionarele
-    // face lista cu cuvintele de lungime maxima
-    // calculeaza rangul documentului curent
-    // determina numarul de cuvinte de lungime maxima
 }

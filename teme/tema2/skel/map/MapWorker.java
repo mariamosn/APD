@@ -1,17 +1,23 @@
 package map;
 
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
 
+/**
+ * Reprezintă un worker din cadrul etapei de map
+ */
 public class MapWorker implements Runnable {
     private Integer id;
     private Integer numOfWorkers;
-    private List<MapResult> results;
-    private ArrayList<MapTask> tasks;
-    private Integer start;
+    private final Map<String, ArrayList<MapResult>> results;
+    private final ArrayList<MapTask> tasks;
+    private final Integer start;
     private Integer end;
+    private Semaphore semaphore;
 
     private HashMap<Integer, Integer> map;
     private ArrayList<String> maxLenWords;
@@ -19,14 +25,16 @@ public class MapWorker implements Runnable {
 
     private RandomAccessFile in = null;
     private String crtDoc = null;
-
     private String delim = ";:/? ̃\\.,><‘[]{}()!@#$%ˆ&- +’=*”| \t\n";
 
-    public MapWorker(Integer id, ArrayList<MapTask> tasks, Integer numOfWorkers, List<MapResult> results) {
+    public MapWorker(Integer id, ArrayList<MapTask> tasks, Integer numOfWorkers, Map<String,
+            ArrayList<MapResult>> results, Semaphore semaphore) {
         this.id = id;
         this.tasks = tasks;
         this.numOfWorkers = numOfWorkers;
         this.results = results;
+        this.semaphore = semaphore;
+
         start = (int) (id * (double)tasks.size() / numOfWorkers);
         end = (int) ((id + 1) * (double)tasks.size() / numOfWorkers);
         if (end > tasks.size()) {
@@ -37,58 +45,23 @@ public class MapWorker implements Runnable {
     @Override
     public void run() {
         try {
+            // parcurge task-urile corespunzătoare thread-ului curent
             for (int i = start; i < end; i++) {
                 this.map = new HashMap<>();
                 this.maxLenWords = new ArrayList<>();
                 this.maxLen = 0;
-                String fragment;
-                // preia un task
+
+                // preia task-ul curent
                 MapTask crtTask = tasks.get(i);
 
-                // citeste fragmentul de dim D din doc
-                if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
-                    if (in != null) {
-                        in.close();
-                    }
-                    in = new RandomAccessFile(crtTask.getDocName(), "r");
-                    crtDoc = crtTask.getDocName();
-                }
+                // citește fragmentul de dimensiune D din document
+                String fragment = getFragment(crtTask);
 
-                int size = Math.min(crtTask.getSize(), (int) in.length() - crtTask.getOffset());
-                int off = crtTask.getOffset();
-                if (off != 0) {
-                    off--;
-                    size++;
-                }
-                byte[] buf = new byte[size];
-                in.seek(off);
-                in.readFully(buf);
-                fragment = new String(buf);
+                // construiește dicționarul și lista de cuvinte de lungime maximă
+                compute(fragment, crtTask);
 
-                // construieste dictionarul si lista de cuvinte de lungime maxima
-                String[] words = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
-                int st = 0;
-                if (crtTask.getOffset() != 0 && delim.indexOf(fragment.charAt(0)) == -1) {
-                    st = 1;
-                }
-                for (int j = st; j < words.length - 1; j++) {
-                    updateResult(words[j]);
-                }
-
-                // preia ultimul cuvant
-                if (st != 1 && words.length > 0 || words.length > 1) {
-                    int lastWord = fragment.lastIndexOf(words[words.length - 1]) + off;
-                    byte[] buf2 = new byte[(int) in.length() - lastWord];
-                    in.seek(lastWord);
-                    in.readFully(buf2);
-                    fragment = new String(buf2);
-                    String[] words2 = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
-                    updateResult(words2[0]);
-                }
-
-                // pune rezultatul intr-un MapResult
-                MapResult result = new MapResult(crtTask.getDocName(), map, maxLenWords);
-                results.add(result);
+                // salvează rezultatul operației de map
+                saveResult(new MapResult(crtTask.getDocName(), map, maxLenWords));
             }
 
             in.close();
@@ -98,6 +71,68 @@ public class MapWorker implements Runnable {
         }
     }
 
+    // citește fragmentul de dimensiune D din document
+    private String getFragment(MapTask crtTask) throws IOException {
+        // pentru a nu deschide același fișier de mai multe ori, fișierul va fi deschis numai
+        // dacă este diferit față de cel de la pasul anterior
+        if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
+            if (in != null) {
+                in.close();
+            }
+            in = new RandomAccessFile(crtTask.getDocName(), "r");
+            crtDoc = crtTask.getDocName();
+        }
+
+        // se determină dimensiunea fragmentului ce urmează să fie preluat
+        int size = Math.min(crtTask.getSize(), (int) in.length() - crtTask.getOffset());
+
+        // și offset-ul la care acesta se găsește în cadrul documentului
+        int off = crtTask.getOffset();
+        if (off != 0) {
+            off--;
+            size++;
+        }
+        byte[] buf = new byte[size];
+        in.seek(off);
+        in.readFully(buf);
+
+        return new String(buf);
+    }
+
+    private int offsetGiver(MapTask task) {
+        int off = task.getOffset();
+        if (off != 0) {
+            off--;
+        }
+        return off;
+    }
+
+    // construiește dicționarul și lista de cuvinte de lungime maximă
+    private void compute(String fragment, MapTask crtTask) throws IOException {
+        String[] words = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
+        int st = 0;
+        if (crtTask.getOffset() != 0 && delim.indexOf(fragment.charAt(0)) == -1) {
+            st = 1;
+        }
+        for (int j = st; j < words.length - 1; j++) {
+            updateResult(words[j]);
+        }
+
+        // preia ultimul cuvânt
+        if (st != 1 && words.length > 0 || words.length > 1) {
+            int off = offsetGiver(crtTask);
+            int lastWord = fragment.lastIndexOf(words[words.length - 1]) + off;
+            byte[] buf2 = new byte[(int) in.length() - lastWord];
+            in.seek(lastWord);
+            in.readFully(buf2);
+            fragment = new String(buf2);
+            String[] words2 = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
+            updateResult(words2[0]);
+        }
+    }
+
+    // actualizează informațiile din dicționar și din lista cu cuvinte de lungime maximă
+    // astfel încât acestea să includă și cuvântul primit ca parametru
     private void updateResult(String word) {
         if (word.length() < 1) {
             return;
@@ -115,5 +150,25 @@ public class MapWorker implements Runnable {
         } else if (word.length() == maxLen) {
             maxLenWords.add(word);
         }
+    }
+
+    // salvează rezultatul operației de map
+    private void saveResult(MapResult result) {
+        try {
+            semaphore.acquire();
+        } catch (Exception e){
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+        if (results.containsKey(result.getDocName())) {
+            ArrayList<MapResult> aux = results.get(result.getDocName());
+            aux.add(result);
+            results.replace(result.getDocName(), aux);
+        } else {
+            ArrayList<MapResult> aux = new ArrayList<>();
+            aux.add(result);
+            results.put(result.getDocName(), aux);
+        }
+        semaphore.release();
     }
 }
