@@ -1,7 +1,15 @@
+// MAria Moșneag 333CA
+
 package map_reduce_generic;
 
 import java.util.ArrayList;
 
+/**
+ * Clasă abstractă generică ce reprezintă "prototipul"
+ * pentru clasa care definește pașii etapei de Map
+ * @param <E> este tipul rezultatului obținut în urma operațiilor de map
+ * @param <MapTaskType> este tipul task-urilor din această etapă
+ */
 public abstract class Map<E, MapTaskType> {
     protected final Integer numOfWorkers;
     protected final ArrayList<MapTaskType> tasks;
@@ -34,7 +42,7 @@ public abstract class Map<E, MapTaskType> {
     protected abstract void createWorkers();
 
     // thread-urile își încheie execuția
-    // această metodă poate fi suprascrisă dacă utilizatorul dorește
+    // această metodă poate fi suprascrisă dacă utilizatorul dorește acest lucru
     protected void doneWorkers() {
         for (int i = 0; i < numOfWorkers; i++) {
             try {

@@ -1,5 +1,143 @@
 Maria Moșneag
 333CA
-
 Tema 2 APD
 
+
+
+Tema2
+	- conține metoda main
+	- preia datele de la input (atât argumentele cu care este rulat programul,
+	  cât și informațiile din fișierul de intrare)
+	- instanțiază câte o clasă coordonatoare pentru fiecare etapă (Map și
+	  Reduce) și o clasă care să gestioneze întreaga activitate a programului
+
+
+map_reduce_generic
+	
+	MapReduce
+		- clasă responsabilă cu întreaga desfășurare a etapelor de Map și Reduce
+		- preia rezultatele obținute în urma operațiilor de Map și le pasează
+		  coordonatorului operațiilor de Reduce
+
+	Map
+		- clasă abstractă ce reprezintă "prototipul" pentru coordonatorul etapei
+		  de Map
+		+ map(): metoda conține logica etapei, apelând metodele responsabile cu
+		  crearea task-urilor și gestionarea thread-urilor (workerilor)
+	
+	Reduce
+		- clasă abstractă ce reprezintă "prototipul" pentru coordonatorul etapei
+		  de Reduce
+		+ reduce(): metoda conține logica etapei, apelând metode care creează
+		  task-uri, gestionează thread-uri (workeri) și prelucrează rezultatele
+		  obținute, scriindu-le pe cele finale în fișierul de ieșire
+
+
+map
+	
+	MapCoordinator
+		- clasa extinde clasa abstractă Map (din map_reduce_generic)
+		- implementează:
+			+ createTasks()
+				- se parcurg toate documentele din lista primită la input și
+				  se împart în fragmente de câte D bytes, iar pe baza acestora
+				  se creează task-uri de Map (MapTask)
+			+ createWorkers()
+				- se creează un număr de workeri (MapWorker) corespunzător
+				  numărului primit la input (numOfWorkers)
+
+	MapWorker
+		- clasa reprezintă un worker din cadrul etapei de Map
+		- implementează Runnable, fiecare worker fiind executat pe câte un
+		  thread
+		+ run()
+			- parcurge task-urile din listă corespunzătoare thread-ului curent
+			  (cuprinse între doi indici, start și end, determinați pe baza
+			  id-ului workerului curent)
+			- pentru fiecare task, preia fragmentul corespunzător
+			  (getFragment), construiește dicționarul și lista de cuvinte
+			  (compute) și memorează rezultatele (saveResult)
+		+ getFragment(...)
+			- preia un fragment pe baza numelui documentului curent și al
+			  offset-ului
+			- pentru a putea gestiona situația în care anumite cuvinte se
+			  găsesc la granița dintre două fragmente, fragmentul va prelua un
+			  caracter suplimentar (din față), dacă este posibil
+		+ compute(...)
+			- împarte fragmentul curent în cuvinte
+			- aici este tratat și cazul cuvintelor aflate la granița a două
+			  fragmente, ultimul cuvânt care are începutul în fragmentul
+			  curent fiind luat în întregime (chiar dacă finalul cuvântului se
+			  găsește în alt fragment)
+			- pentru fiecare cuvânt se apelează updateResult
+		+ updateResult(...)
+			- actualizează dicționarul și lista de cuvinte cu lungime maximă pe
+			  baza cuvântului primit ca parametru
+		+ saveResult(...)
+			- rezultatul unui task de Map (MapResult) este introdus într-un
+			  dicționar în care cheia este numele documentului, iar valoarea
+			  este o listă de MapResult
+			- întrucât la acest HashTable au acces toate thread-urile, pentru
+			  a evita erorile, folosesc un semafor care să nu permită decât
+			  unui singur thread să facă modificăril la un anumit moment de
+			  timp
+
+	MapTask
+		- conține datele corespunzătoare unui task de Map (numele documentului,
+		  offset-ul și dimensiunea)
+
+	MapResult
+		- conține datele obținute în urma efectuării operației de Map (numele
+		  documentului, dicționarul și lista de cuvinte cu lungime maximă)
+
+
+reduce
+
+	ReduceCoordinator
+		- clasa extinde clasa abstractă Reduce (din map_reduce_generic)
+		- implementează:
+			+ createTasks()
+				- pe baza dicționarului cu rezultatele din etapa anterioară,
+				  se creează task-uri pentru etapa de Reduce (ReduceTask)
+			+ createWorkers()
+				- se creează un număr de workeri (ReduceWorker) corespunzător
+				  numărului primit la input (numOfWorkers)
+			+ finalProcessing()
+				- se sortează documentele în funcție de rangul obținut (sort)
+				  și se scriu rezultatele finale în fișierul de output (write)
+
+	ReduceWorker
+		- clasa reprezintă un worker din cadrul etapei de Reduce
+		- implementează Runnable, fiecare worker fiind executat pe câte un
+		  thread
+		+ run()
+			- parcurge task-urile corespunzătoare workerului curent (între
+			  start și end, indici calculați pe baza id-ului thread-ului
+			  curent)
+			- execută etapa de combinare (combine) și cea de procesare
+			  (process)
+		+ combine(...)
+			- parcurge rezultatele obținute în urma etapei de Map și, pe baza
+			  acestora, actualizează dicționarul și lista cu cuvinte de lungime
+			  maximă
+		+ process(...)
+			- calculează rangul documentului curent, pe baza formulei și a
+			  datelor din dicționarul obținut în urma etapei de combine
+			- pentru a nu (re)calcula de fiecare dată numerele din șirul lui
+			  Fibonacci, am salvat valorile deja  obținute la pașii anteriori
+			  într-o listă, astfel încât o valoare nu este calculată decât
+			  prima dată; totuși, întrucât lista în care șirul este reținut
+			  poate fi accesată de toate thread-urile, am folosit un semafor
+			  care să nu permită actualizarea valorilor din listă decât unui
+			  singur thread la un moment dat
+			- rezultatele finale sunt memorate (ReduceResult)
+
+	ReduceTask
+		- conține datele corespunzătoare unui task de Reduce (numele
+		  documentului și lista cu rezultatele corespunzătoare obținute în
+		  urma etapei de Map)
+
+	ReduceResult
+		- conține datele obținute în urma efectuării operației de Reduce
+		  (numele fișierului, rangul, lungimea maximă a cuvintelor și numărul
+		  de cuvinte cu acea lungime)

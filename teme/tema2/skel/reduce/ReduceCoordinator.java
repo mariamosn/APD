@@ -1,3 +1,5 @@
+// Maria Moșneag 333CA
+
 package reduce;
 
 import map.MapResult;
@@ -8,7 +10,8 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 
 /**
- * Creează task-uri de reduce pentru workeri, gestionează workerii și prelucrează rezultatele finale
+ * Clasă responsabilă de crearea task-urilor pentru etapa de Reduce,
+ * de gestionarea activității workerilor și de prelucrarea rezultatelor finale
  */
 public class ReduceCoordinator extends Reduce<Map<String, ArrayList<MapResult>>> {
     private final Map<String, ReduceResult> results;
@@ -33,14 +36,13 @@ public class ReduceCoordinator extends Reduce<Map<String, ArrayList<MapResult>>>
 
     // sortează documentele descrescător în funcție de rang
     private void sort() {
-        Collections.sort(docs, new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                if (results.get(o1).getRank() < results.get(o2).getRank()) {
-                    return 1;
-                }
-                return -1;
+        docs.sort((o1, o2) -> {
+            if (results.get(o1).getRank() < results.get(o2).getRank()) {
+                return 1;
+            } else if (results.get(o1).getRank().equals(results.get(o2).getRank())) {
+                return 0;
             }
+            return -1;
         });
     }
 

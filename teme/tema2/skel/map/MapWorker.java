@@ -1,3 +1,5 @@
+// Maria Moșneag 333CA
+
 package map;
 
 import java.io.IOException;
@@ -11,13 +13,13 @@ import java.util.concurrent.Semaphore;
  * Reprezintă un worker din cadrul etapei de map
  */
 public class MapWorker implements Runnable {
-    private Integer id;
-    private Integer numOfWorkers;
+    private final Integer id;
+    private final Integer numOfWorkers;
     private final Map<String, ArrayList<MapResult>> results;
     private final ArrayList<MapTask> tasks;
     private final Integer start;
     private Integer end;
-    private Semaphore semaphore;
+    private final Semaphore semaphore;
 
     private HashMap<Integer, Integer> map;
     private ArrayList<String> maxLenWords;
@@ -25,7 +27,6 @@ public class MapWorker implements Runnable {
 
     private RandomAccessFile in = null;
     private String crtDoc = null;
-    private String delim = ";:/? ̃\\.,><‘[]{}()!@#$%ˆ&- +’=*”| \t\n";
 
     public MapWorker(Integer id, ArrayList<MapTask> tasks, Integer numOfWorkers, Map<String,
             ArrayList<MapResult>> results, Semaphore semaphore) {
@@ -35,8 +36,8 @@ public class MapWorker implements Runnable {
         this.results = results;
         this.semaphore = semaphore;
 
-        start = (int) (id * (double)tasks.size() / numOfWorkers);
-        end = (int) ((id + 1) * (double)tasks.size() / numOfWorkers);
+        start = (int) (this.id * (double)tasks.size() / numOfWorkers);
+        end = (int) ((this.id + 1) * (double)tasks.size() / numOfWorkers);
         if (end > tasks.size()) {
             end = tasks.size();
         }
@@ -51,7 +52,7 @@ public class MapWorker implements Runnable {
                 this.maxLenWords = new ArrayList<>();
                 this.maxLen = 0;
 
-                // preia task-ul curent
+                // preia un task
                 MapTask crtTask = tasks.get(i);
 
                 // citește fragmentul de dimensiune D din document
@@ -73,8 +74,8 @@ public class MapWorker implements Runnable {
 
     // citește fragmentul de dimensiune D din document
     private String getFragment(MapTask crtTask) throws IOException {
-        // pentru a nu deschide același fișier de mai multe ori, fișierul va fi deschis numai
-        // dacă este diferit față de cel de la pasul anterior
+        // pentru a nu deschide același fișier de mai multe ori decât este cazul,
+        // fișierul va fi deschis numai dacă este diferit față de cel de la pasul anterior
         if (crtDoc == null || in == null || !crtDoc.equals(crtTask.getDocName())) {
             if (in != null) {
                 in.close();
@@ -109,6 +110,7 @@ public class MapWorker implements Runnable {
 
     // construiește dicționarul și lista de cuvinte de lungime maximă
     private void compute(String fragment, MapTask crtTask) throws IOException {
+        String delim = ";:/? ̃\\.,><‘[]{}()!@#$%ˆ&- +’=*”| \t\n";
         String[] words = fragment.split("[]});:/?~\\\\.,><`\\[{(!@#$%^&_+'=*\"| \t\r\n-]+");
         int st = 0;
         if (crtTask.getOffset() != 0 && delim.indexOf(fragment.charAt(0)) == -1) {

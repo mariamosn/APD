@@ -1,3 +1,5 @@
+// Maria Moșneag 333CA
+
 package map;
 
 import java.util.ArrayList;
@@ -8,9 +10,9 @@ import java.util.HashMap;
  * pornind de la unul dintre task-urile de map disponibile
  */
 public class MapResult {
-    private String docName;
+    private final String docName;
     private HashMap<Integer, Integer> map;
-    private ArrayList<String> maxLenWords;
+    private final ArrayList<String> maxLenWords;
 
     public MapResult(String docName, HashMap<Integer, Integer> map, ArrayList<String> maxLenWords) {
         this.docName = docName;
@@ -20,10 +22,6 @@ public class MapResult {
 
     public String getDocName() {
         return docName;
-    }
-
-    public void setDocName(String docName) {
-        this.docName = docName;
     }
 
     public HashMap<Integer, Integer> getMap() {
@@ -36,9 +34,5 @@ public class MapResult {
 
     public ArrayList<String> getMaxLenWords() {
         return maxLenWords;
-    }
-
-    public void setMaxLenWords(ArrayList<String> maxLenWords) {
-        this.maxLenWords = maxLenWords;
     }
 }

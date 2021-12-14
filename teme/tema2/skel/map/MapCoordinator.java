@@ -1,3 +1,5 @@
+// Maria Moșneag 333CA
+
 package map;
 
 import java.nio.file.Files;
@@ -6,12 +8,13 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 
 /**
- * Creează task-uri de map pentru workeri și gestionează workerii
+ * Clasă responsabilă cu crearea task-urilor pentru etapa de Map
+ * și cu gestionarea activității workerilor
  */
 public class MapCoordinator extends map_reduce_generic.Map<Map<String, ArrayList<MapResult>>, MapTask> {
     private final ArrayList<String> inputFiles;
     private final Integer fragmentSize;
-    private Integer numberOfDocs;
+    private final Integer numberOfDocs;
     public static Semaphore semaphore;
 
     public MapCoordinator(Integer numOfWorkers, ArrayList<String> inputFiles, Integer fragmentSize,
@@ -26,6 +29,7 @@ public class MapCoordinator extends map_reduce_generic.Map<Map<String, ArrayList
 
     // creează task-uri de map pe baza documentelor
     protected void createTasks() {
+        // se parcurg toate documentele
         for (String doc : inputFiles) {
             try {
                 long bytes = Files.size(Paths.get(doc));

@@ -1,3 +1,5 @@
+// Maria Moșneag 333CA
+
 package reduce;
 
 import map.MapResult;
@@ -12,8 +14,8 @@ import java.util.concurrent.Semaphore;
  * Reprezintă un worker din cadrul etapei de reduce
  */
 public class ReduceWorker implements Runnable {
-    private Integer id;
-    private Integer numOfWorkers;
+    private final Integer id;
+    private final Integer numOfWorkers;
     private final ArrayList<ReduceTask> tasks;
     private final Integer start;
     private Integer end;
@@ -93,7 +95,7 @@ public class ReduceWorker implements Runnable {
         // determinarea rangului
         Double rank = 0.0;
         for (Integer len : map.keySet()) {
-            Integer fib = 0;
+            Integer fib;
             try {
                 semaphore.acquire();
             } catch (Exception e) {

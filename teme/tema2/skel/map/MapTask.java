@@ -1,12 +1,14 @@
+// Maria Moșneag 333CA
+
 package map;
 
 /**
  * Conține datele corespunzătoare unui task de map
  */
 public class MapTask {
-    private String docName;
-    private Integer offset;
-    private Integer size;
+    private final String docName;
+    private final Integer offset;
+    private final Integer size;
 
     public MapTask(String docName, Integer offset, Integer size) {
         this.docName = docName;
@@ -18,23 +20,11 @@ public class MapTask {
         return docName;
     }
 
-    public void setDocName(String docName) {
-        this.docName = docName;
-    }
-
     public Integer getOffset() {
         return offset;
     }
 
-    public void setOffset(Integer offset) {
-        this.offset = offset;
-    }
-
     public Integer getSize() {
         return size;
-    }
-
-    public void setSize(Integer size) {
-        this.size = size;
     }
 }
