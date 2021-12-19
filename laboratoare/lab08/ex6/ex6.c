@@ -21,17 +21,15 @@ int main (int argc, char *argv[])
     int color = old_rank / GROUP_SIZE;
     MPI_Comm_split(MPI_COMM_WORLD, color, new_rank, &custom_group);
 
+    MPI_Comm_size(custom_group, &new_size);
+    MPI_Comm_rank(custom_group, &new_rank);
+
     printf("Rank [%d] / size [%d] in MPI_COMM_WORLD and rank [%d] / size [%d] in custom group.\n",
             old_rank, old_size, new_rank, new_size);
 
     // Send the rank to the next process.
-    if (new_rank == GROUP_SIZE - 1) {
-        MPI_Send(&new_rank, 1, MPI_INT, 0,
+    MPI_Send(&new_rank, 1, MPI_INT, (new_rank + 1) % GROUP_SIZE,
                 0, custom_group);
-    } else {
-        MPI_Send(&new_rank, 1, MPI_INT, new_rank + 1,
-                0, custom_group);
-    }
 
     // Receive the rank.
     if (new_rank == 0) {
