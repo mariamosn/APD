@@ -38,34 +38,67 @@ int* get_dst(int rank, int numProcs, int leader) {
 	memset(v, -1, sizeof(int) * numProcs);
 	memset(vRecv, -1, sizeof(int) * numProcs);
 	
-	if (rank == leader)
+	if (rank == leader) {
 		v[rank] = -1;
-	else {
-		/* Daca procesul curent nu este liderul, inseamna ca va astepta un mesaj de la un parinte */
-		MPI_Recv(vRecv, numProcs, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+	} else {
+		/*
+		*  Daca procesul curent nu este liderul, inseamna ca va astepta un mesaj
+		*  de la un parinte
+		*/
+		MPI_Recv(vRecv, numProcs, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
+					&status);
 		v[rank] = status.MPI_SOURCE;
 	}
 
 
 	/*
-	*  TODO2: Pentru fiecare proces vecin care nu este parintele procesului curent,
-	*		  voi trimite vectorul de parinti propriu. 
+	*  TODO2: Pentru fiecare proces vecin care nu este parintele procesului
+	*  curent, voi trimite vectorul de parinti propriu. 
 	*/
+	for (int i = 0; i < num_neigh; i++) {
+		if (neigh[i] != v[rank]) {
+			MPI_Send(v, numProcs, MPI_INT, neigh[i], 0, MPI_COMM_WORLD);
+		}
+	}
 
 	/*
-	*  TODO2: Vom astepta de la fiecare proces vecin care nu este parintele procesului curent 
-	*		  vectorul de parinti si actualizam vectorul propriu de parinti daca exista informatii aditionale
+	*  TODO2: Vom astepta de la fiecare proces vecin care nu este parintele
+	*  procesului curent vectorul de parinti si actualizam vectorul propriu de
+	*  parinti daca exista informatii aditionale
 	*/
+	for (int i = 0; i < num_neigh; i++) {
+		if (neigh[i] != v[rank]) {
+			MPI_Recv(vRecv, numProcs, MPI_INT, neigh[i], 0, MPI_COMM_WORLD,
+						MPI_STATUS_IGNORE);
+			for (int j = 0; j < numProcs; j++) {
+				if (vRecv[j] != -1) {
+					v[j] = vRecv[j];
+				}
+			}
+		}
+	}
+
 
 	/*
-	*  TODO2: Topologia fiind deja stabilita, orice proces ce nu este lider va propaga
-	* 		  vectorul de vecini parintelui lui si va astepta topologia completa de la acesta
+	*  TODO2: Topologia fiind deja stabilita, orice proces ce nu este lider va
+	*  propaga vectorul de vecini parintelui lui si va astepta topologia
+	*  completa de la acesta
 	*/
+	if (rank != leader) {
+		MPI_Send(v, numProcs, MPI_INT, v[rank], 0, MPI_COMM_WORLD);
+		MPI_Recv(v, numProcs, MPI_INT, v[rank], 0, MPI_COMM_WORLD,
+						MPI_STATUS_IGNORE);		
+	}
 
 
 	/*
 	*  TODO2: Procesul curent va trimite doar copiilor lui topologia completa
 	*/
+	for (int i = 0; i < numProcs; i++) {
+		if (v[i] == rank) {
+			MPI_Send(v, numProcs, MPI_INT, i, 0, MPI_COMM_WORLD);
+		}
+	}
 
 	for (int i = 0; i < numProcs && rank == leader; i++) {
 		printf("The node %d has the parent %d\n", i, v[i]);
@@ -85,6 +118,15 @@ int leader_chosing(int rank, int nProcesses) {
 		* 		 si voi astepta un mesaj de la orice vecin
 		* 		 Daca liderul e mai mare decat al meu, il actualizez pe al meu
 		*/
+		for (int i = 0; i < num_neigh; i++) {
+			MPI_Send(&leader, 1, MPI_INT, neigh[i], 0, MPI_COMM_WORLD);
+			int recv_leader;
+			MPI_Recv(&recv_leader, 1, MPI_INT, MPI_ANY_SOURCE, 0,
+						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			if (recv_leader > leader) {
+				leader = recv_leader;
+			}
+		}
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -110,6 +152,12 @@ int get_number_of_nodes(int rank, int leader) {
 		* 		 Cu valoarea primita, actualizam valoarea cunoscuta ca fiind
 		* 		 media dintre cele 2
 		*/
+		for (int i = 0; i < num_neigh; i++) {
+			MPI_Send(&val, 1, MPI_DOUBLE, neigh[i], 0, MPI_COMM_WORLD);
+			MPI_Recv(&recvd, 1, MPI_DOUBLE, neigh[i], 0, MPI_COMM_WORLD,
+						MPI_STATUS_IGNORE);
+			val = (val + recvd) / 2;
+		}
 	}
 	
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -130,16 +178,54 @@ int ** get_topology(int rank, int nProcesses, int * parents, int leader) {
 		topology[rank][neigh[i]] = 1;
 	}
 
-	/* TODO4: Primim informatii de la toti copii si actualizam matricea de topologie */
+	/*
+	*  TODO4: Primim informatii de la toti copii si actualizam matricea de
+	*  topologie
+	*/
+	for (int i = 0; i < nProcesses; i++) {
+		if (rank == parents[i]) {
+			for (int j = 0; j < nProcesses; j++) {
+				MPI_Recv(vTopology[j], nProcesses, MPI_INT, i, 0,
+							MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				for (int k = 0; k < nProcesses; k++) {
+					if (topology[j][k] == 0) {
+						topology[j][k] = vTopology[j][k];
+					}
+				}
+			}
+		}
+	}
 
 
 	/* TODO4: Propagam matricea proprie catre parinte */
+	for (int i = 0; i < nProcesses; i++) {
+		if (parents[rank] != -1) {
+			MPI_Send(topology[i], nProcesses, MPI_INT, parents[rank], 0,
+						MPI_COMM_WORLD);
+		}
+	}
 	
 
-	/* TODO4: Daca nu suntem liderul, asteptam topologia completa de la parinte  */
+	/*
+	*  TODO4: Daca nu suntem liderul, asteptam topologia completa de la parinte
+	*/
+	if (rank != leader) {
+		for (int i = 0; i < nProcesses; i++) {
+			MPI_Recv(topology[i], nProcesses, MPI_INT, parents[rank], 0,
+						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		}
+	}
 	
 	
 	/* TODO4: Trimitem topologia completa copiilor */
+	for (int i = 0; i < num_neigh; i++) {
+		if (neigh[i] != parents[rank]) {
+			for (int j = 0; j < nProcesses; j++) {
+				MPI_Send(topology[j], nProcesses, MPI_INT, neigh[i], 0,
+							MPI_COMM_WORLD);
+			}
+		}
+	}
 	
 
 	return topology;
