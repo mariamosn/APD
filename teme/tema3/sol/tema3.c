@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 // tipul procesului
 #define COORDINATOR 0
@@ -45,7 +46,6 @@ void get_updates_from_coordinators(int rank, int comm_status,
 
         MPI_Recv(&recv_num_of_workers, 1, MPI_INT, MPI_ANY_SOURCE, 0,
                     MPI_COMM_WORLD, &status);
-        // TODO: de facut verificare la malloc
         recv_workers = malloc(recv_num_of_workers * sizeof(int));
         MPI_Recv(recv_workers, recv_num_of_workers, MPI_INT,
                     status.MPI_SOURCE, 0, MPI_COMM_WORLD,
@@ -76,7 +76,6 @@ void error_handling(int comm_status, int rank, int *num_of_workers,
             int src = 1 - rank;
             MPI_Recv(&num_of_workers[src], 1, MPI_INT, 2, 0, MPI_COMM_WORLD,
                         MPI_STATUS_IGNORE);
-            // TODO: de facut verificare la malloc
             workers[src] = malloc(num_of_workers[src] * sizeof(int));
             MPI_Recv(workers[src], num_of_workers[src], MPI_INT, 2, 0,
                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -122,7 +121,6 @@ void get_topology_for_coordinator(int rank, int *num_of_workers, int **workers,
     }
 
     fscanf(in, "%d\n", &my_num_of_workers);
-    // TODO: de facut verificare la malloc
     my_workers = malloc(my_num_of_workers * sizeof(int));
     for (int i = 0; i < my_num_of_workers; i++) {
         fscanf(in, "%d\n", &my_workers[i]);
@@ -176,7 +174,6 @@ void get_topology(int rank, int comm_status, int process_type,
         for (int i = 0; i < COORD_NUM; i++) {
             MPI_Recv(&num_of_workers[i], 1, MPI_INT, *my_coordinator, 0,
                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // TODO: de facut verificare la malloc
             workers[i] = malloc(num_of_workers[i] * sizeof(int));
             MPI_Recv(workers[i], num_of_workers[i], MPI_INT, *my_coordinator, 0,
                         MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -244,11 +241,12 @@ void div_between_coord(int numtasks, int n, int *num_of_workers, int **offset,
         }
     }
 }
-// preia datele de la procesul 0
+
+// preia datele de la procesul 0 (sau de la 2, în cazul în care acesta este in-
+// termediar)
 void get_array_from_0(int *size, int **v) {
     MPI_Recv(size, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
                 MPI_STATUS_IGNORE);
-    // TODO: de facut verificare la malloc
     *v = malloc(*size * sizeof(int));
     MPI_Recv(*v, *size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
                 MPI_STATUS_IGNORE);
@@ -262,7 +260,6 @@ void intermediate_for_0_and_1() {
     int *aux_v, aux_size;
     MPI_Recv(&aux_size, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
                 MPI_STATUS_IGNORE);
-    // TODO: de facut verificare la malloc
     aux_v = malloc(aux_size * sizeof(int));
     MPI_Recv(aux_v, aux_size, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
                 MPI_STATUS_IGNORE);
@@ -363,12 +360,13 @@ void get_final_array(int rank, int comm_status, int **offset, int **v,
 
 // 0 afișează rezultatele
 void print_results(int rank, int **v, int n) {
+    char buf[100000];
     if (rank == 0) {
-        printf("Rezultat: ");
+        sprintf(buf, "Rezultat: ");
         for (int i = 0; i < n; i++) {
-            printf("%d ", (*v)[i]);
+            sprintf(buf + strlen(buf), "%d ", (*v)[i]);
         }
-        printf("\n");
+        printf("%s\n", buf);
     }
 }
 
@@ -396,8 +394,6 @@ void compute_for_coordinators(int rank, int **v, int *size, int n, int numtasks,
 
     // trimite către workeri partea corespunzătoare
     send_array_to_workers(rank, v, size, num_of_workers, workers);
-
-    //////////////////////////////////////////////////////////////////
 
     // primește de la workeri părțile modificate
     recv_modified_array_from_workers(rank, v, size, num_of_workers, workers);
@@ -435,8 +431,6 @@ void compute(int rank, int comm_status, int process_type, int *num_of_workers,
         MPI_Send(v, size, MPI_INT, my_coordinator, 0, MPI_COMM_WORLD);
         printf("M(%d,%d)\n", rank, my_coordinator);
     }
-
-    ////////////////////////////////////////////////////////////////////////
 
     MPI_Barrier(MPI_COMM_WORLD);
 
