@@ -1,0 +1,49 @@
+Maria Moșneag
+333CA
+Tema 3 APD
+
+get_topology => stabilirea topologiei
+    - pentru coordonatori:
+        + get_topology_for_coordinator
+            - Sunt preluate datele din fișierul de input.
+            - Fiecare coordonator trimite subarborele propriu celorlalți coordo-
+              natori. (update_coordinators)
+            - Fiecare coordonator primește subarborii celorlalți coordonatori.
+              (get_updates_from_coordinators)
+            - Dacă legătura dintre 0 și 1 este întreruptă, 2 va intermedia comu-
+              nicarea dintre aceste două procese. (error_handling)
+            - Coordonatori transmit mai departe topologia workerilor
+              (send_topology_to_workers); primul mesaj pe care coordonatorul îl
+              va trimite către un worker va fi unul prin care îl anunță că el îi
+              este coordonator.
+    - pentru workeri:
+        + Primesc un mesaj prin care sunt anunțați cine este coordonatorul lor.
+        + Primesc topologia de la coordonator.
+    - La final, fiecare proces afișează topologia. (print_topology)
+
+compute => realizarea calculelor
+    - pentru coordonatori:
+        + compute_for_coordinators
+            - Procesul 0 generează vectorul. (generate_array)
+            - Tot procesul 0 este cel care împarte vectorul cu ceilalți coordo-
+              natori. (div_between_coord)
+            - Ceilalți coordonatori preiau datele de la 0, fie în mod direct, în
+              cazul în care nu există erori pe canalele de comunicare, fie folo-
+              sind procesul 2 ca intermediar. (get_array_from_0 și
+              intermediate_for_0_and_1)
+            - Fiecare coordonator împarte secțiunea sa din vector între workerii
+              săi. (send_array_to_workers)
+            - Fiecare coordonator primește de la workeri bucățile de vector mo-
+              dificate. (recv_modified_array_from_workers)
+            - Procesul 0 reunește toate rezultatele parțiale. (get_final_array)
+            - Tot procesul 0 este cel care afișează rezultatele. (print_results)
+    - pentru workeri:
+        + Primesc partea corespunzătoare din vector de la coordonator.
+        + Modifică vectorul în mod corespunzător (dublează fiecare element).
+        + Trimit vectorul modificat coordonatorului.
+
+comm_status -> {CONNECTED, ERROR} = starea legăturii dintre 0 și 1
+process_type -> {COORDINATOR, WORKER}
+num_of_workers[i] = numărul de workeri gestionați de coordonatorul i
+workers[i][j] = cel de-al j-lea worker al coordonatorului i
+my_coordinator = coordonatorul workerului curent
